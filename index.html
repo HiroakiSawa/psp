@@ -143,9 +143,15 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
    ============================================================ */
 const SUPABASE_URL      = 'https://gutvzvovyjtezqdadsvq.supabase.co';   // ← Supabaseの Project URL
 const SUPABASE_ANON_KEY = 'sb_publishable_awWyCu2lSG8X9-TYDFFqyw_-grLvcOK';               // ← Supabaseの anon public key
-const ADMIN_PASSWORD    = 'hIroaki0728';                     // ← 管理者画面のパスワード
+const ADMIN_PASSWORD    = 'hIroaki0728'　// ← 管理者画面のパスワード
+const ADMIN_KEEEY       = 'manage-7h3k9x2p'
 /* ============================================================ */
 
+//  管理画面のURL  ：  公開URL の末尾に  #manage-7h3k9x2p  を付ける
+//  例： https://ユーザー名.github.io/リポジトリ名/#manage-7h3k9x2p
+//  ※ このキーは公開URLを知っている人には見えうるため、必ず変更し、URLは関係者だけに共有してください。
+
+  
 const DEFAULT_CONFIG = {
   eventTitle: 'ポスター発表会 投票',
   votingOpen: false,
