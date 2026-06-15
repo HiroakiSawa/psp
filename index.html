@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>ポスター発表会 投票</title>
+<style>
+  :root{
+    --bg:#f1f5f9; --ink:#0f172a; --muted:#64748b; --faint:#94a3b8;
+    --line:#e2e8f0; --card:#ffffff;
+    --poster:#f59e0b; --poster-bg:#fffbeb; --poster-100:#fef3c7; --poster-ink:#92400e;
+    --psp:#0d9488; --psp-bg:#f0fdfa; --psp-100:#ccfbf1; --psp-ink:#115e59;
+    --ok:#10b981; --ok-bg:#ecfdf5; --danger:#e11d48; --danger-bg:#fff1f2;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink); line-height:1.5;
+    font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:20px 16px 96px}
+  h1{font-size:20px;margin:0;font-weight:700}
+  button{font-family:inherit;cursor:pointer;border:none;background:none}
+  input,select,textarea{font-family:inherit;font-size:14px}
+  .muted{color:var(--muted)} .faint{color:var(--faint)}
+  .spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+
+  /* header */
+  .top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px}
+  .top .sub{margin:4px 0 0;font-size:13px;color:var(--muted)}
+  .title-row{display:flex;align-items:center;gap:8px}
+  .iconbtn{padding:8px;border-radius:999px;color:var(--faint)}
+  .iconbtn:hover{background:#e2e8f0;color:var(--ink)}
+
+  /* chips & banners */
+  .chip{display:inline-block;padding:4px 12px;border-radius:999px;font-size:14px;font-weight:600}
+  .chip.poster{background:var(--poster-100);color:var(--poster-ink)}
+  .chip.psp{background:var(--psp-100);color:var(--psp-ink)}
+  .banner{border-radius:12px;padding:14px;font-size:14px;margin-bottom:18px}
+  .banner.info{background:var(--card);border:1px solid var(--line);color:var(--muted);text-align:center}
+  .banner.ok{background:var(--ok);color:#fff;display:flex;gap:8px;align-items:center;font-weight:600}
+  .banner.warn{background:var(--poster-bg);border:1px solid var(--poster);color:var(--poster-ink);display:flex;gap:8px;align-items:flex-start}
+
+  /* candidate cards */
+  section.cat{margin-bottom:28px}
+  .cat-head{display:flex;align-items:center;justify-content:between;justify-content:space-between;margin-bottom:12px}
+  .voted-tag{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:var(--ok)}
+  ul.cands{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+  .card{width:100%;text-align:left;border:1px solid var(--line);background:var(--card);border-radius:16px;padding:14px;transition:transform .05s,box-shadow .1s}
+  .card:active{transform:scale(.99)}
+  .card .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .card .meta{min-width:0}
+  .card .nm{display:flex;align-items:center;gap:8px}
+  .card .nm .name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .no{flex:none;background:#f1f5f9;color:var(--muted);font-size:12px;font-weight:600;padding:2px 6px;border-radius:6px}
+  .aff{margin:2px 0 0;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ttl{margin:6px 0 0;font-size:14px;color:#475569;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .radio{flex:none;width:24px;height:24px;border-radius:999px;border:2px solid #cbd5e1;display:flex;align-items:center;justify-content:center}
+  .radio .dot{width:12px;height:12px;border-radius:999px}
+  .check{flex:none;width:28px;height:28px;border-radius:999px;background:var(--ok);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px}
+  .dim{opacity:.45}
+  .card.sel-poster{border-color:var(--poster);background:var(--poster-bg);box-shadow:0 0 0 2px var(--poster)}
+  .card.sel-poster .radio{border-color:var(--poster)} .card.sel-poster .dot{background:var(--poster)}
+  .card.sel-psp{border-color:var(--psp);background:var(--psp-bg);box-shadow:0 0 0 2px var(--psp)}
+  .card.sel-psp .radio{border-color:var(--psp)} .card.sel-psp .dot{background:var(--psp)}
+  .card.mine{border-color:#6ee7b7;background:var(--ok-bg)}
+
+  .btn{display:block;width:100%;border-radius:12px;padding:13px;font-weight:700;color:#fff;font-size:15px}
+  .btn.poster{background:var(--poster)} .btn.psp{background:var(--psp)}
+  .btn.dark{background:var(--ink)} .btn:disabled{background:#cbd5e1;cursor:not-allowed}
+  .btn.ghost{background:#fff;color:var(--muted);border:1px solid var(--line)}
+  .btn.sm{padding:9px;font-size:14px;border-radius:10px}
+  .vote-btn{margin-top:12px}
+  .empty{border:1px dashed #cbd5e1;border-radius:12px;padding:16px;text-align:center;color:var(--faint);font-size:14px}
+
+  /* modal */
+  .mask{position:fixed;inset:0;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;justify-content:center;z-index:50;padding:0}
+  @media(min-width:520px){.mask{align-items:center;padding:16px}}
+  .modal{width:100%;max-width:480px;background:#fff;border-radius:24px 24px 0 0;padding:24px}
+  @media(min-width:520px){.modal{border-radius:24px}}
+  .modal h2{font-size:18px;margin:0 0 12px}
+  .modal .pick{background:#f8fafc;border-radius:12px;padding:14px;margin:12px 0}
+  .modal .acts{display:flex;gap:12px;margin-top:18px}
+
+  /* admin */
+  .back{display:flex;align-items:center;gap:4px;font-size:14px;color:var(--muted);margin-bottom:16px}
+  .login{max-width:300px;margin:40px auto 0;background:#fff;border:1px solid var(--line);border-radius:16px;padding:24px;text-align:center}
+  .login input{width:100%;margin-top:16px;border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+  .tabs{display:flex;gap:4px;background:#e2e8f0;border-radius:12px;padding:4px;margin-bottom:20px}
+  .tabs button{flex:1;border-radius:9px;padding:9px 4px;font-size:13px;font-weight:600;color:var(--muted)}
+  .tabs button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:16px}
+  .panel h3{margin:0 0 4px;font-size:15px}
+  .switch{position:relative;width:54px;height:30px;border-radius:999px;background:#cbd5e1;flex:none;transition:background .15s}
+  .switch.on{background:var(--ok)}
+  .switch .knob{position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:left .15s}
+  .switch.on .knob{left:27px}
+  .field{margin-top:12px}
+  .field label{font-size:13px;font-weight:600;color:#334155}
+  .field input{width:100%;margin-top:4px;border:1px solid var(--line);border-radius:10px;padding:9px}
+  .crow{border:1px solid var(--line);border-radius:14px;padding:10px;margin-bottom:10px}
+  .crow .l1{display:flex;gap:8px}
+  .crow input{border:1px solid var(--line);border-radius:8px;padding:7px}
+  .crow .no-in{width:64px} .crow .nm-in{flex:1}
+  .crow .full{width:100%;margin-top:8px}
+  .del{padding:8px;border-radius:8px;color:#fb7185}
+  .del:hover{background:var(--danger-bg)}
+  .add-row{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;border:1px dashed #cbd5e1;border-radius:12px;padding:10px;font-size:14px;font-weight:600;color:var(--muted)}
+  .add-row:hover{background:#f8fafc}
+  textarea.csv{width:100%;min-height:120px;border:1px solid var(--line);border-radius:10px;padding:10px;font-family:ui-monospace,Menlo,monospace;font-size:12px;margin-top:8px}
+  .seg{display:flex;gap:6px;margin-top:10px}
+  .seg button{flex:1;border:1px solid var(--line);border-radius:9px;padding:8px;font-size:13px;font-weight:600;color:var(--muted);background:#fff}
+  .seg button.on{border-color:var(--ink);color:var(--ink);background:#f8fafc}
+  .note{font-size:12px;color:var(--faint);margin-top:8px}
+  .err{font-size:13px;color:var(--danger);margin-top:8px}
+  .savebar{position:sticky;bottom:12px;margin-top:4px}
+  /* results */
+  .res-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .res-head .ppl{display:flex;align-items:center;gap:6px;font-size:14px;color:var(--muted)}
+  .res-row{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+  .res-row .top2{display:flex;align-items:center;justify-content:space-between;font-size:14px;margin-bottom:6px}
+  .res-row .nm2{display:flex;align-items:center;gap:6px;font-weight:600}
+  .res-row .cnt{font-weight:800;font-variant-numeric:tabular-nums}
+  .res-row .cnt small{font-weight:400;color:var(--faint);font-size:12px;margin-left:2px}
+  .bar{height:8px;width:100%;background:#f1f5f9;border-radius:999px;overflow:hidden}
+  .bar > i{display:block;height:100%;border-radius:999px}
+  .bar.poster > i{background:var(--poster)} .bar.psp > i{background:var(--psp)}
+  .toggle-mini{border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600}
+  .center{min-height:60vh;display:flex;align-items:center;justify-content:center;color:var(--faint);gap:8px}
+  .config-warn{margin:40px 0;background:var(--poster-bg);border:1px solid var(--poster);border-radius:14px;padding:18px;font-size:14px;color:var(--poster-ink)}
+  code{background:#f1f5f9;padding:1px 5px;border-radius:5px;font-size:13px}
+</style>
+</head>
+<body>
+  <div class="wrap" id="app"><div class="center"><span class="spin">◌</span> 読み込み中…</div></div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+/* ============================================================
+   ① ここだけ編集してください（あなたのSupabase情報・管理用パスワード）
+   ============================================================ */
+const SUPABASE_URL      = 'https://gutvzvovyjtezqdadsvq.supabase.co';   // ← Supabaseの Project URL
+const SUPABASE_ANON_KEY = 'sb_publishable_awWyCu2lSG8X9-TYDFFqyw_-grLvcOK';               // ← Supabaseの anon public key
+const ADMIN_PASSWORD    = 'hIroaki0728';                     // ← 管理者画面のパスワード
+/* ============================================================ */
+
+const DEFAULT_CONFIG = {
+  eventTitle: 'ポスター発表会 投票',
+  votingOpen: false,
+  categories: [
+    { id:'poster', label:'ポスター賞' },
+    { id:'psp',    label:'PSP賞' },
+  ],
+  candidates: { poster: [], psp: [] },
+};
+
+// ---- 接続 ----
+const configured = !SUPABASE_URL.includes('YOUR-PROJECT') && !SUPABASE_ANON_KEY.includes('YOUR-PUBLIC');
+const sb = configured ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+// ---- 端末ID（本物のWebアプリなのでlocalStorageを使用）----
+function deviceId(){
+  let id = localStorage.getItem('pv_device_id');
+  if(!id){ id = 'd'+Math.random().toString(36).slice(2)+Date.now().toString(36); localStorage.setItem('pv_device_id', id); }
+  return id;
+}
+const DEVICE = deviceId();
+const rid = () => 'c'+Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3);
+
+// ---- 状態 ----
+const state = {
+  view:'voter', ready:false,
+  cfg:null, myVotes:{}, selected:{}, confirm:null,
+  authed:false, tab:'voting',
+  draft:null, dirty:false,
+  results:{counts:{},participants:0,loading:false}, auto:false, autoTimer:null,
+  pollTimer:null, cfgSig:''
+};
+const themeOf = c => (c==='poster'?'poster':'psp');
+
+// ---- データ層 ----
+async function dbLoadConfig(){
+  if(!sb) return null;
+  const { data, error } = await sb.from('app_config').select('data').eq('id',1).maybeSingle();
+  if(error) return undefined; // 通信エラー
+  return data?.data || null;
+}
+async function dbSaveConfig(cfg){
+  return sb.from('app_config').upsert({ id:1, data:cfg, updated_at:new Date().toISOString() });
+}
+async function dbLoadMyVotes(){
+  const out={};
+  if(!sb) return out;
+  const { data } = await sb.from('votes').select('category,candidate_id').eq('device_id', DEVICE);
+  (data||[]).forEach(r=> out[r.category]=r.candidate_id);
+  return out;
+}
+async function dbCastVote(category, candidateId){
+  const { error } = await sb.from('votes').insert({ category, candidate_id:candidateId, device_id:DEVICE });
+  if(error){ if(error.code==='23505') return 'dup'; return 'err'; }
+  return 'ok';
+}
+async function dbTally(){
+  const counts={}; const devs=new Set();
+  if(!sb) return {counts,participants:0};
+  const { data } = await sb.from('votes').select('category,candidate_id,device_id');
+  (data||[]).forEach(r=>{
+    (counts[r.category] ??= {});
+    counts[r.category][r.candidate_id] = (counts[r.category][r.candidate_id]||0)+1;
+    devs.add(r.device_id);
+  });
+  return { counts, participants:devs.size };
+}
+async function dbReset(){ if(sb) await sb.from('votes').delete().gt('id',0); }
+
+// ---- CSV ----
+function parseCSV(text){
+  text = text.replace(/^\uFEFF/,'');
+  const rows=[]; let row=[], field='', inQ=false, i=0;
+  while(i<text.length){
+    const c=text[i];
+    if(inQ){
+      if(c==='"'){ if(text[i+1]==='"'){field+='"';i+=2;continue;} inQ=false;i++;continue; }
+      field+=c;i++;continue;
+    }
+    if(c==='"'){inQ=true;i++;continue;}
+    if(c===','){row.push(field);field='';i++;continue;}
+    if(c==='\r'){i++;continue;}
+    if(c==='\n'){row.push(field);rows.push(row);row=[];field='';i++;continue;}
+    field+=c;i++;
+  }
+  if(field!=='' || row.length){ row.push(field); rows.push(row); }
+  return rows.filter(r=> r.some(x=> x.trim()!==''));
+}
+const HEADER_ALIASES = {
+  category:['category','cat','賞','部門','カテゴリ'],
+  name:['name','氏名','名前','発表者','presenter'],
+  posterNo:['no','no.','number','番号','ポスター番号','poster_no','posterno','演題番号','#'],
+  affiliation:['affiliation','所属','organization','organisation','機関','所属機関'],
+  title:['title','演題','タイトル','題目','発表題目'],
+};
+function fieldForHeader(h){
+  const v=h.trim().toLowerCase();
+  for(const key in HEADER_ALIASES){ if(HEADER_ALIASES[key].includes(v)) return key; }
+  return null;
+}
+function catIdFromValue(val){
+  const v=(val||'').trim().toLowerCase();
+  for(const cat of state.draft.categories){ if(v===cat.id.toLowerCase()||v===cat.label.toLowerCase()) return cat.id; }
+  if(['poster','ポスター','ポスター賞'].includes(v)) return 'poster';
+  if(['psp','psp賞'].includes(v)) return 'psp';
+  return null;
+}
+// 戻り値: { byCat:{poster:[],psp:[]}, total, errors:[] }
+function csvToCandidates(text, defaultCat){
+  const rows = parseCSV(text);
+  if(!rows.length) return { byCat:{}, total:0, errors:['データがありません。'] };
+  const header = rows[0].map(fieldForHeader);
+  const hasHeader = header.some(Boolean);
+  if(!hasHeader) return { byCat:{}, total:0, errors:['1行目に見出し（name, no, affiliation, title, category）が必要です。'] };
+  const idx = {}; header.forEach((f,i)=>{ if(f) idx[f]=i; });
+  if(idx.name===undefined) return { byCat:{}, total:0, errors:['「name（氏名）」の列が見つかりません。'] };
+  const byCat={}; let total=0; const errors=[];
+  for(let r=1;r<rows.length;r++){
+    const cells=rows[r];
+    const name=(cells[idx.name]||'').trim();
+    if(!name) continue;
+    let cat=defaultCat;
+    if(idx.category!==undefined){ const c=catIdFromValue(cells[idx.category]); if(c) cat=c; }
+    (byCat[cat] ??= []).push({
+      id: rid(), name,
+      posterNo:(idx.posterNo!==undefined?(cells[idx.posterNo]||'').trim():''),
+      affiliation:(idx.affiliation!==undefined?(cells[idx.affiliation]||'').trim():''),
+      title:(idx.title!==undefined?(cells[idx.title]||'').trim():''),
+    });
+    total++;
+  }
+  return { byCat, total, errors };
+}
+function downloadTemplate(){
+  const csv = 'category,no,name,affiliation,title\n'
+            + 'poster,1,山田太郎,〇〇大学,△△に関する研究\n'
+            + 'poster,2,佐藤花子,〇〇研究所,□□の解析\n'
+            + 'psp,1,鈴木一郎,××大学,◎◎システムの開発\n';
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='candidates-template.csv';
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ---- 小物 ----
+const $ = sel => document.querySelector(sel);
+function esc(s){ return (s??'').toString().replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function icon(name){
+  const I={
+    gear:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+    award:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5"/></svg>',
+    check:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>',
+    back:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>',
+    trash:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+    plus:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+    refresh:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>',
+    people:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+    lock:'<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+  };
+  return I[name]||'';
+}
+
+// ============================================================
+// レンダリング
+// ============================================================
+function render(){
+  if(!configured){ renderNotConfigured(); return; }
+  if(!state.ready){ $('#app').innerHTML='<div class="center"><span class="spin">◌</span> 読み込み中…</div>'; return; }
+  if(state.view==='admin') renderAdmin(); else renderVoter();
+}
+
+function renderNotConfigured(){
+  $('#app').innerHTML = `<div class="config-warn">
+    <b>セットアップが未完了です。</b><br><br>
+    このファイルの上部にある <code>SUPABASE_URL</code> と <code>SUPABASE_ANON_KEY</code> に、
+    あなたのSupabaseプロジェクトの値を貼り付けて保存してください。
+    手順は同梱の README をご覧ください。
+  </div>`;
+}
+
+// ---------- 投票画面 ----------
+function renderVoter(){
+  const cfg = state.cfg;
+  if(!cfg){ $('#app').innerHTML = `<div class="config-warn"><b>準備中です。</b><br>主催者が候補者を登録すると投票できるようになります。</div>
+    <div style="text-align:right;margin-top:12px"><button class="iconbtn" id="toAdmin">${icon('gear')}</button></div>`;
+    $('#toAdmin').onclick=()=>{ state.view='admin'; render(); }; return; }
+
+  const allDone = cfg.categories.length>0 && cfg.categories.every(c=> state.myVotes[c.id]);
+  let html = `<div class="top">
+    <div><div class="title-row">${icon('award')}<h1>${esc(cfg.eventTitle)}</h1></div>
+    <p class="sub">各賞につき1票を投じてください。</p></div>
+    <button class="iconbtn" id="toAdmin" aria-label="管理者画面">${icon('gear')}</button>
+  </div>`;
+
+  if(!cfg.votingOpen) html += `<div class="banner info">現在、投票は受け付けていません。</div>`;
+  if(allDone && cfg.votingOpen) html += `<div class="banner ok">${icon('check')}<span>投票ありがとうございました。すべて投票済みです。</span></div>`;
+
+  for(const cat of cfg.categories){
+    const th=themeOf(cat.id), list=cfg.candidates[cat.id]||[], mine=state.myVotes[cat.id], sel=state.selected[cat.id];
+    html += `<section class="cat" data-cat="${cat.id}">
+      <div class="cat-head"><span class="chip ${th}">${esc(cat.label)}</span>
+        ${mine?`<span class="voted-tag">${icon('check')} 投票済み</span>`:`<span class="faint" style="font-size:12px">1人を選んでください</span>`}
+      </div>`;
+    if(!list.length){ html += `<div class="empty">候補者が未登録です。</div>`; }
+    else {
+      html += `<ul class="cands">`;
+      for(const c of list){
+        const isMine=mine===c.id, isSel=(sel===c.id&&!mine), locked=!!mine||!cfg.votingOpen;
+        let cls='card'; if(isSel) cls+=' sel-'+th; if(isMine) cls+=' mine'; if(mine&&!isMine) cls+=' dim';
+        html += `<li><button class="${cls}" data-pick="${c.id}" data-cat="${cat.id}" ${locked?'disabled':''}>
+          <div class="row"><div class="meta">
+            <div class="nm">${c.posterNo?`<span class="no">No.${esc(c.posterNo)}</span>`:''}<span class="name">${esc(c.name)}</span></div>
+            ${c.affiliation?`<p class="aff">${esc(c.affiliation)}</p>`:''}
+            ${c.title?`<p class="ttl">${esc(c.title)}</p>`:''}
+          </div>${isMine?`<span class="check">${icon('check')}</span>`:`<span class="radio"><span class="dot"></span></span>`}</div>
+        </button></li>`;
+      }
+      html += `</ul>`;
+      if(!mine && cfg.votingOpen) html += `<button class="btn ${th} vote-btn" data-vote="${cat.id}" ${sel?'':'disabled'}>${esc(cat.label)}に投票する</button>`;
+    }
+    html += `</section>`;
+  }
+  $('#app').innerHTML = html;
+  $('#toAdmin').onclick=()=>{ state.view='admin'; stopPolling(); render(); };
+  document.querySelectorAll('[data-pick]').forEach(b=> b.onclick=()=>{
+    state.selected[b.dataset.cat]=b.dataset.pick; render();
+  });
+  document.querySelectorAll('[data-vote]').forEach(b=> b.onclick=()=>{
+    const catId=b.dataset.vote, sel=state.selected[catId];
+    const cand=(cfg.candidates[catId]||[]).find(x=>x.id===sel); if(cand){ state.confirm={catId,cand}; renderConfirm(); }
+  });
+}
+
+function renderConfirm(){
+  const {catId,cand}=state.confirm;
+  const label=state.cfg.categories.find(c=>c.id===catId)?.label||'';
+  const m=document.createElement('div'); m.className='mask'; m.id='confirmMask';
+  m.innerHTML=`<div class="modal">
+    <h2>投票内容の確認</h2>
+    <p class="muted" style="font-size:14px"><b>${esc(label)}</b> に、次の候補へ投票します。</p>
+    <div class="pick"><div class="nm">${cand.posterNo?`<span class="no">No.${esc(cand.posterNo)}</span>`:''}<b>${esc(cand.name)}</b></div>
+    ${cand.affiliation?`<p class="aff">${esc(cand.affiliation)}</p>`:''}</div>
+    <p style="font-size:12px;color:var(--poster-ink)">投票後は変更・取り消しできません。</p>
+    <div class="acts"><button class="btn ghost" id="cCancel">キャンセル</button><button class="btn dark" id="cOk">投票する</button></div>
+  </div>`;
+  document.body.appendChild(m);
+  $('#cCancel').onclick=closeConfirm;
+  $('#cOk').onclick=async()=>{
+    $('#cOk').disabled=true; $('#cOk').textContent='送信中…';
+    const r=await dbCastVote(catId,cand.id);
+    if(r==='ok'||r==='dup'){ state.myVotes[catId]=cand.id; state.selected[catId]=null; }
+    else { alert('送信に失敗しました。通信環境を確認して、もう一度お試しください。'); }
+    closeConfirm(); render();
+  };
+}
+function closeConfirm(){ const m=$('#confirmMask'); if(m) m.remove(); state.confirm=null; }
+
+// ---------- 管理画面 ----------
+function renderAdmin(){
+  if(!state.authed){ renderLogin(); return; }
+  if(!state.draft) state.draft = state.cfg ? JSON.parse(JSON.stringify(state.cfg)) : JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+  const tabs=[['voting','投票'],['candidates','候補者'],['results','結果'],['settings','設定']];
+  let html=`<button class="back" id="back">${icon('back')} 投票画面へ戻る</button>
+    <h1 style="margin-bottom:16px">管理者画面</h1>
+    <div class="tabs">${tabs.map(([id,l])=>`<button data-tab="${id}" class="${state.tab===id?'on':''}">${l}</button>`).join('')}</div>
+    <div id="tabbody"></div>`;
+  $('#app').innerHTML=html;
+  $('#back').onclick=async()=>{ state.view='voter'; state.cfg=await dbLoadConfig()||state.cfg; state.myVotes=await dbLoadMyVotes(); startPolling(); render(); };
+  document.querySelectorAll('[data-tab]').forEach(b=> b.onclick=()=>{ state.tab=b.dataset.tab; renderAdmin(); });
+  if(state.tab==='voting') renderTabVoting();
+  else if(state.tab==='candidates') renderTabCandidates();
+  else if(state.tab==='results') renderTabResults();
+  else renderTabSettings();
+}
+
+function renderLogin(){
+  $('#app').innerHTML=`<button class="back" id="back">${icon('back')} 投票画面へ戻る</button>
+    <div class="login">${icon('lock')}<h3 style="margin:8px 0 0">管理者ログイン</h3>
+    <input type="password" id="pw" placeholder="パスワード" />
+    <div id="pwerr" class="err" style="display:none">パスワードが違います。</div>
+    <button class="btn dark" id="login" style="margin-top:14px">ログイン</button></div>`;
+  $('#back').onclick=()=>{ state.view='voter'; render(); };
+  const tryLogin=()=>{ if($('#pw').value===ADMIN_PASSWORD){ state.authed=true; renderAdmin(); } else $('#pwerr').style.display='block'; };
+  $('#login').onclick=tryLogin;
+  $('#pw').addEventListener('keydown',e=>{ if(e.key==='Enter') tryLogin(); });
+}
+
+function renderTabVoting(){
+  const open=state.draft.votingOpen;
+  $('#tabbody').innerHTML=`<div class="panel">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div><h3>投票の受付</h3><p class="muted" style="margin:2px 0 0;font-size:14px">${open?'受付中です':'停止中です'}</p></div>
+      <button class="switch ${open?'on':''}" id="toggle" aria-label="受付切替"><span class="knob"></span></button>
+    </div>
+    <p class="note">受付中にすると、参加者の画面で投票ボタンが有効になります。発表中はこの切り替えだけで完結します。切り替えは即時に保存されます。</p>
+  </div>
+  <div class="panel"><h3>参加者への共有</h3>
+    <p class="muted" style="font-size:14px;margin-top:6px">このページを公開したURLをQRコードにして会場で配布してください。各参加者がスマホで読み取って投票します。</p>
+  </div>`;
+  $('#toggle').onclick=async()=>{ state.draft.votingOpen=!open; await dbSaveConfig(state.draft); state.cfg=JSON.parse(JSON.stringify(state.draft)); renderTabVoting(); };
+}
+
+function renderTabCandidates(){
+  const d=state.draft;
+  let html='';
+  for(const cat of d.categories){
+    const th=themeOf(cat.id), list=d.candidates[cat.id]||[];
+    html+=`<section style="margin-bottom:22px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span class="chip ${th}">${esc(cat.label)}</span><span class="faint" style="font-size:12px">${list.length}名</span>
+      </div>`;
+    list.forEach((c,i)=>{
+      html+=`<div class="crow" data-cat="${cat.id}" data-i="${i}">
+        <div class="l1">
+          <input class="no-in" data-f="posterNo" value="${esc(c.posterNo)}" placeholder="No." />
+          <input class="nm-in" data-f="name" value="${esc(c.name)}" placeholder="氏名（必須）" />
+          <button class="del" data-del>${icon('trash')}</button>
+        </div>
+        <input class="full" data-f="affiliation" value="${esc(c.affiliation)}" placeholder="所属" />
+        <input class="full" data-f="title" value="${esc(c.title)}" placeholder="演題（任意）" />
+      </div>`;
+    });
+    html+=`<button class="add-row" data-add="${cat.id}">${icon('plus')} 候補者を1人追加</button></section>`;
+  }
+  // CSV取り込み
+  html+=`<div class="panel">
+    <h3>CSVで候補者を追加</h3>
+    <p class="note">見出し行を含むCSVを貼り付け（またはファイル選択）してください。列: <code>name</code>(氏名/必須), <code>no</code>(番号), <code>affiliation</code>(所属), <code>title</code>(演題), <code>category</code>(<code>poster</code>/<code>psp</code>。無い場合は下で選んだ部門に追加)。日本語の見出し（氏名・番号・所属・演題・部門）も使えます。</p>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
+      <label class="btn ghost sm" style="width:auto;display:inline-block">CSVファイルを選択
+        <input type="file" id="csvfile" accept=".csv,text/csv" style="display:none" />
+      </label>
+      <button class="btn ghost sm" id="tmpl" style="width:auto">テンプレートを取得</button>
+    </div>
+    <textarea class="csv" id="csvtext" placeholder="category,no,name,affiliation,title&#10;poster,1,山田太郎,〇〇大学,△△に関する研究"></textarea>
+    <div style="display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap">
+      <span class="note" style="margin:0">category列が無いとき追加する部門:</span>
+      <select id="csvcat" style="border:1px solid var(--line);border-radius:8px;padding:6px">
+        ${d.categories.map(c=>`<option value="${c.id}">${esc(c.label)}</option>`).join('')}</select>
+    </div>
+    <div class="seg" id="csvmode">
+      <button data-mode="append" class="on">既存に追加</button>
+      <button data-mode="replace">既存を置き換え</button>
+    </div>
+    <button class="btn dark sm" id="csvimport" style="margin-top:10px">CSVを取り込む</button>
+    <div id="csvmsg"></div>
+  </div>`;
+  // 保存
+  html+=`<div class="savebar"><button class="btn ${state.dirty?'dark':''}" id="save" ${state.dirty?'':'disabled'}>${state.dirty?'変更を保存して反映':'保存済み'}</button>
+    <p class="note" style="text-align:center">氏名が空の候補は保存時に除外されます。</p></div>`;
+  $('#tabbody').innerHTML=html;
+
+  // --- 入力（再描画せずdraftを更新→入力中もフォーカス維持）---
+  document.querySelectorAll('.crow input').forEach(inp=>{
+    inp.addEventListener('input',e=>{
+      const row=e.target.closest('.crow'); const cat=row.dataset.cat, i=+row.dataset.i, f=e.target.dataset.f;
+      d.candidates[cat][i][f]=e.target.value; markDirty();
+    });
+  });
+  document.querySelectorAll('[data-del]').forEach(b=> b.onclick=()=>{
+    const row=b.closest('.crow'); d.candidates[row.dataset.cat].splice(+row.dataset.i,1); markDirty(); renderTabCandidates();
+  });
+  document.querySelectorAll('[data-add]').forEach(b=> b.onclick=()=>{
+    (d.candidates[b.dataset.add] ??= []).push({id:rid(),name:'',posterNo:'',affiliation:'',title:''}); markDirty(); renderTabCandidates();
+  });
+  // CSV
+  $('#tmpl').onclick=downloadTemplate;
+  $('#csvfile').onchange=e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ $('#csvtext').value=r.result; }; r.readAsText(f,'utf-8'); };
+  let csvMode='append';
+  document.querySelectorAll('#csvmode button').forEach(b=> b.onclick=()=>{ csvMode=b.dataset.mode; document.querySelectorAll('#csvmode button').forEach(x=>x.classList.toggle('on',x===b)); });
+  $('#csvimport').onclick=()=>{
+    const text=$('#csvtext').value.trim();
+    if(!text){ $('#csvmsg').innerHTML='<div class="err">CSVが空です。</div>'; return; }
+    const { byCat, total, errors } = csvToCandidates(text, $('#csvcat').value);
+    if(errors.length){ $('#csvmsg').innerHTML='<div class="err">'+errors.map(esc).join('<br>')+'</div>'; return; }
+    if(!total){ $('#csvmsg').innerHTML='<div class="err">取り込める行がありませんでした。</div>'; return; }
+    for(const cat of d.categories){
+      const add=byCat[cat.id]||[];
+      if(csvMode==='replace'){ if(byCat[cat.id]!==undefined) d.candidates[cat.id]=add; }
+      else { d.candidates[cat.id]=(d.candidates[cat.id]||[]).concat(add); }
+    }
+    markDirty();
+    $('#csvtext').value='';
+    state._csvDone=`${total}名を取り込みました。下の「変更を保存して反映」を押すと確定します。`;
+    renderTabCandidates();
+  };
+  if(state._csvDone){ $('#csvmsg').innerHTML=`<div class="note" style="color:var(--ok)">${esc(state._csvDone)}</div>`; state._csvDone=null; }
+  $('#save').onclick=saveCandidates;
+}
+function markDirty(){ state.dirty=true; const s=$('#save'); if(s){ s.disabled=false; s.classList.add('dark'); s.textContent='変更を保存して反映'; } }
+async function saveCandidates(){
+  const d=state.draft;
+  for(const cat of d.categories){ d.candidates[cat.id]=(d.candidates[cat.id]||[]).filter(c=>c.name.trim()); }
+  const btn=$('#save'); if(btn){ btn.disabled=true; btn.textContent='保存中…'; }
+  await dbSaveConfig(d);
+  state.cfg=JSON.parse(JSON.stringify(d)); state.dirty=false;
+  renderTabCandidates();
+}
+
+function renderTabResults(){
+  const cfg=state.draft;
+  const { counts, participants, loading }=state.results;
+  let html=`<div class="res-head">
+    <span class="ppl">${icon('people')} 投票した人数 ${participants}名</span>
+    <span style="display:flex;gap:8px;align-items:center">
+      <button class="toggle-mini" id="auto" style="background:${state.auto?'var(--ok-bg)':'#f1f5f9'};color:${state.auto?'#047857':'var(--muted)'}">自動更新 ${state.auto?'ON':'OFF'}</button>
+      <button class="iconbtn" id="refresh" style="background:#f1f5f9">${`<span class="${loading?'spin':''}" style="display:inline-flex">${icon('refresh')}</span>`}</button>
+    </span></div>`;
+  for(const cat of cfg.categories){
+    const th=themeOf(cat.id), list=cfg.candidates[cat.id]||[], cc=counts[cat.id]||{};
+    const ranked=list.map(c=>({...c,n:cc[c.id]||0})).sort((a,b)=>b.n-a.n);
+    const max=Math.max(1,...ranked.map(r=>r.n)), top=ranked[0]?.n||0;
+    html+=`<section style="margin-bottom:20px"><span class="chip ${th}" style="margin-bottom:12px;display:inline-block">${esc(cat.label)}</span>`;
+    if(!ranked.length) html+=`<p class="faint" style="font-size:14px">候補者が未登録です。</p>`;
+    else { html+=ranked.map(r=>{
+      const isTop=r.n>0&&r.n===top;
+      return `<div class="res-row"><div class="top2">
+        <span class="nm2">${isTop?`<span style="color:var(--${th})">${icon('award')}</span>`:''}${r.posterNo?`<span class="faint" style="font-size:12px">No.${esc(r.posterNo)}</span>`:''}${esc(r.name)}</span>
+        <span class="cnt">${r.n}<small>票</small></span></div>
+        <div class="bar ${th}"><i style="width:${(r.n/max)*100}%"></i></div></div>`;
+    }).join(''); }
+    html+=`</section>`;
+  }
+  html+=`<p class="note" style="text-align:center">同票の場合は同順位として表示されます。</p>`;
+  $('#tabbody').innerHTML=html;
+  $('#refresh').onclick=loadResults;
+  $('#auto').onclick=()=>{ state.auto=!state.auto; if(state.auto){ state.autoTimer=setInterval(loadResults,5000); } else { clearInterval(state.autoTimer); } renderTabResults(); };
+  if(!Object.keys(counts).length) loadResults();
+}
+async function loadResults(){
+  state.results.loading=true; if(state.tab==='results'&&state.view==='admin') renderTabResults();
+  const r=await dbTally(); state.results={...r,loading:false};
+  if(state.tab==='results'&&state.view==='admin') renderTabResults();
+}
+
+function renderTabSettings(){
+  const d=state.draft;
+  $('#tabbody').innerHTML=`<div class="panel">
+    <div class="field"><label>イベント名</label><input id="s-title" value="${esc(d.eventTitle)}" /></div>
+    ${d.categories.map(c=>`<div class="field"><label>賞の名称（${c.id}）</label><input data-label="${c.id}" value="${esc(c.label)}" /></div>`).join('')}
+    <button class="btn dark sm" id="s-save" style="margin-top:16px">設定を保存</button>
+    <p class="note">管理者パスワードはこのファイルの <code>ADMIN_PASSWORD</code> で変更します。公開前に必ず変更してください（簡易的な保護です）。</p>
+  </div>
+  <div class="panel" style="border-color:#fecdd3;background:var(--danger-bg)">
+    <h3 style="color:#9f1239">投票データのリセット</h3>
+    <p style="font-size:14px;color:#be123c;margin-top:4px">すべての票を削除します。本番前のテスト後に使用してください。元に戻せません。</p>
+    <div id="resetArea"><button class="btn sm" id="reset" style="background:#fff;color:#e11d48;border:1px solid #fecdd3">すべての票をリセット</button></div>
+  </div>`;
+  $('#s-save').onclick=async()=>{
+    d.eventTitle=$('#s-title').value.trim()||d.eventTitle;
+    document.querySelectorAll('[data-label]').forEach(i=>{ const c=d.categories.find(x=>x.id===i.dataset.label); if(c) c.label=i.value.trim()||c.label; });
+    const b=$('#s-save'); b.textContent='保存中…'; b.disabled=true;
+    await dbSaveConfig(d); state.cfg=JSON.parse(JSON.stringify(d));
+    b.textContent='保存しました'; setTimeout(()=>{ if($('#s-save')){ $('#s-save').textContent='設定を保存'; $('#s-save').disabled=false; } },1500);
+  };
+  $('#reset').onclick=()=>{
+    $('#resetArea').innerHTML=`<div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn ghost sm" id="rcancel" style="width:auto;flex:1">やめる</button>
+      <button class="btn sm" id="rok" style="background:#e11d48;flex:1">本当に削除</button></div>`;
+    $('#rcancel').onclick=renderTabSettings;
+    $('#rok').onclick=async()=>{ $('#rok').textContent='削除中…'; $('#rok').disabled=true; await dbReset(); state.results={counts:{},participants:0,loading:false}; renderTabSettings(); };
+  };
+}
+
+// ---- ポーリング（投票画面で受付開始/候補変更を反映）----
+function sigOf(cfg,mv){ return JSON.stringify([cfg?.votingOpen,cfg?.eventTitle,cfg?.categories,cfg?.candidates,mv]); }
+function startPolling(){
+  stopPolling();
+  state.cfgSig=sigOf(state.cfg,state.myVotes);
+  state.pollTimer=setInterval(async()=>{
+    if(state.view!=='voter'||state.confirm) return;
+    const c=await dbLoadConfig(); if(c===undefined) return; // 通信エラーは無視
+    const mv=await dbLoadMyVotes();
+    const sig=sigOf(c,mv);
+    if(sig!==state.cfgSig){ state.cfg=c; state.myVotes=mv; state.cfgSig=sig; if(state.view==='voter') renderVoter(); }
+  },7000);
+}
+function stopPolling(){ if(state.pollTimer){ clearInterval(state.pollTimer); state.pollTimer=null; } }
+
+// ---- 起動 ----
+(async function init(){
+  if(!configured){ render(); return; }
+  try{
+    state.cfg=await dbLoadConfig();
+    if(state.cfg===undefined) state.cfg=null;
+    state.myVotes=await dbLoadMyVotes();
+  }catch(e){ console.error(e); }
+  state.ready=true; render(); startPolling();
+})();
+</script>
+</body>
+</html>
